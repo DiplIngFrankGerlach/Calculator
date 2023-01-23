@@ -1,0 +1,63 @@
+
+
+class OperandOderOperator
+{
+methods:
+   virtual int isOperand();
+   virtual int isOperator();
+
+   virtual void drucke(&String_16 ausgabe);
+};
+
+class Operand extends OperandOderOperator
+{
+   int wert;
+methods:
+   virtual int isOperand();
+   virtual void drucke(&String_16 ausgabe);
+};
+
+
+class Operator extends OperandOderOperator
+{
+   char  operat;
+methods:
+   virtual int isOperator();
+   virtual void drucke(&String_16 ausgabe);
+};
+
+
+
+class Ausrechner
+{
+  Scanner* scanner;
+  generate GrowingList(OperandOderOperator);
+  generate GrowingList(Operand);
+  generate GrowingList(Operator);
+
+  GrowingList_OperandOderOperator* oopList;
+  GrowingList_Operand* operandStack;
+  GrowingList_Operator* operatorStack;
+  PrintfClass pfc;
+methods:
+   Ausrechner(&String_16  dateiname);
+
+   //Parser, which needs stackbased, right-to-left processing of token list
+   void LeftExpression();
+   void Expression();
+   int werteAus();//compute value of expression
+   int isHigherPrio(Operator* oprL,Operator* oprR);
+   void rechneSpitze();//compute the expression on top of the stack
+   void druckeTokenListe();
+
+   //alternativer Rekursiver Parser
+   int Addition();
+   int Multiplication();
+   int Primary();
+
+   //error+stop routines
+   void fehler(char meldung[]);
+   void fehler(&String_16 meldung);
+   
+};
+

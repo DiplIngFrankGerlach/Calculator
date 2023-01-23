@@ -1,0 +1,8 @@
+
+
+class Main
+{
+methods:
+   int main();
+
+};
