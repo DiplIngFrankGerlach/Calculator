@@ -7,7 +7,7 @@ This project is a parser and calculator for Infix Expressions (e.g. 1+2*(3+4) ==
 
 1.) Process the linear token list from the end, using a stack-based processor
 
-1. 2.) Parser-driven precedence of '*' _and '/' over '+' and '-'. Direct Computation:
+2.) Parser-driven precedence of '*' _and '/' over '+' and '-'. Direct Computation:
    ```
       Grammar Principle:
       
