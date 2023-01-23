@@ -27,7 +27,10 @@ methods:
 };
 
 
-
+/* Parser class for computation of infix expressions.
+   Realizes two different techniques to correctly
+   evaluate operator precedence (e.g. Multiplication before Addition)
+*/
 class Ausrechner
 {
   Scanner* scanner;
