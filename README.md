@@ -12,7 +12,8 @@ This project is a parser and calculator for Infix Expressions (e.g. 1+2*(3+4) ==
       Grammar Principle:
       
       Addition ::= Multi (('+' | '-') Multi)*
-      Multi ::= NUMBER (('*' | '/') Multi)*
+      Multi ::= Primary (('*' | '/') Multi)*
+      Primary ::= NUMBER | '(' Addition ')'
       
       with * being "zero or more repetitions" 
    ```
