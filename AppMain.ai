@@ -1,0 +1,24 @@
+//Aufruf-Syntax:sprprog.exe <DBDC-Datei> <Botschafts-NEGATIV-Liste.csv>
+
+int Main::main()
+{ 
+  
+  var CommandlineArgs cla;
+  var PrintfClass pfc;
+  var String_16 eingabeDN;
+
+  cla.getArgument(1,eingabeDN);
+
+  var Ausrechner ar(eingabeDN);
+
+  //use this to run the calculator with post processing stack
+  //ar.Expression();
+  //ar.werteAus();
+
+  //the parser-controlled expression calculator (more elegant)
+  var int r = ar.Addition();
+  pfc.fstr("ergebnis: $").sa(r).pr();
+
+   return 1;
+   
+}

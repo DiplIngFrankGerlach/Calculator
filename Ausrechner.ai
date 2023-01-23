@@ -1,0 +1,447 @@
+
+
+
+
+
+
+Ausrechner::Ausrechner(&String_16  dateiname)
+{
+
+   var SPRFile* eingabeDatei = new SPRFile(dateiname,1);
+   if(eingabeDatei.systemHandle() < 1 )
+   {
+      pfc.fstr("kann Datei nicht oeffnen").pr();
+   }
+   scanner = new Scanner(eingabeDatei);
+   var Token t = scanner.nextToken();
+
+   oopList = new GrowingList_OperandOderOperator(30);
+   operandStack = new GrowingList_Operand(30);
+   operatorStack = new GrowingList_Operator(30);
+}
+
+void Ausrechner::LeftExpression()
+{
+   
+   var String_16* tokVal;
+   var Token t;
+   scanner.currentToken(t,tokVal);
+   //var PrintfClass pfc;
+   switch(t)
+   {
+      case T_ZAHL: {
+          var int wert = tokVal.asNumber();
+          scanner.nextToken();
+
+          var Operand* operand = new Operand;
+          operand.wert = wert;
+          var OperandOderOperator* ooop;
+          ooop = new OperandOderOperator;
+          ooop = cast(OperandOderOperator*,operand);
+          oopList.add(ooop);
+      };break;
+      case T_KLAMMER_AUF:{
+          var Operator* operat = new Operator;
+          operat.operat = '(';
+          var OperandOderOperator* ooop;
+          ooop = new OperandOderOperator;
+          ooop = cast(OperandOderOperator*,operat);
+          oopList.add(ooop);
+
+          scanner.nextToken();
+          this.Expression();
+          
+          scanner.currentToken(t,tokVal);
+          if(t != T_KLAMMER_ZU)
+          {
+            pfc.fstr("Fehlende Klammer zu").pr();
+            var SystemControl sc;
+            sc.exit();
+          }
+          scanner.nextToken(); 
+      };break;
+      default:{
+            pfc.fstr("Klammer auf oder Zahl erwartet").pr();
+            var SystemControl sc;
+            sc.exit();
+      };
+     
+   }
+}
+
+void Ausrechner::Expression()
+{
+   //Expression ::= LeftExpr | LeftExpr '+' Expression | LeftExpr '-' Expression | LeftExpr '*' Expression | LeftExpr '/' Expression;
+   //
+   //LeftExpr ::= DOUBLE | '(' Expression ')'
+
+   var String_16* tokVal;
+   var Token t;
+   scanner.currentToken(t,tokVal);
+  
+   this.LeftExpression();
+   scanner.currentToken(t,tokVal);
+   switch(t)
+   {
+       case T_DATEI_ENDE:
+       case T_KLAMMER_ZU:
+       {
+          var Operator* operat = new Operator;
+          operat.operat = ')';
+          var OperandOderOperator* ooop;
+          ooop = new OperandOderOperator;
+          ooop = cast(OperandOderOperator*,operat);
+          oopList.add(ooop);
+       };break;
+       case T_PLUS:
+       {
+           scanner.nextToken();
+           var Operator* operat = new Operator;
+           operat.operat = '+';
+           var OperandOderOperator* ooop;
+           ooop = new OperandOderOperator;
+           ooop = cast(OperandOderOperator*,operat);
+           oopList.add(ooop);
+
+           this.Expression();   
+       };break;
+       case T_MINUS:
+       {
+           scanner.nextToken();
+           var Operator* operat = new Operator;
+           operat.operat = '-';
+           var OperandOderOperator* ooop;
+           ooop = new OperandOderOperator;
+           ooop = cast(OperandOderOperator*,operat);
+           oopList.add(ooop);
+           this.Expression();   
+          
+       };break;
+       case T_MAL:
+       {
+           scanner.nextToken();
+           var Operator* operat = new Operator;
+           operat.operat = '*';
+           var OperandOderOperator* ooop;
+           ooop = new OperandOderOperator;
+           ooop = cast(OperandOderOperator*,operat);
+           oopList.add(ooop);
+           this.Expression();   
+       };break;
+       case T_DURCH:
+       {
+           scanner.nextToken();
+           var Operator* operat = new Operator;
+           operat.operat = '/';
+           var OperandOderOperator* ooop;
+           ooop = new OperandOderOperator;
+           ooop = cast(OperandOderOperator*,operat);
+           oopList.add(ooop);
+           this.Expression();   
+       };break;
+       case T_NEUE_ZEILE:
+       {
+       };break;
+       default: {pfc.fstr("ungueltiger Token: $ wert: $").sa(t).sa(tokVal).pr(); };
+   }
+  
+}
+
+void Ausrechner::druckeTokenListe()
+{ 
+   var String_16 ausgabe;
+   //Debug Ausgabe
+   for(var int i=0; i < oopList.length(); i++)
+   {
+      var OperandOderOperator* oop;
+      oopList.getAt(i,oop);
+      oop.drucke(ausgabe);
+      pfc.fstr("$ ").sa(ausgabe).prNoLF();
+   }
+   pfc.fstr("").pr();
+}
+
+int Ausrechner::werteAus()
+{
+
+   //Ausrechnen
+   for(var int i=oopList.length() - 1; i >= 0; i=i - 1)
+   {
+      this.druckeTokenListe();
+
+      var OperandOderOperator* ooop;
+      oopList.getAt(i,ooop);
+      if( ooop.isOperand() )
+      {
+         var Operand* operand = cast(Operand*,ooop);
+         operandStack.push(operand);
+      }
+      else
+      {
+          if( ooop.isOperator() )
+          {
+             var Operator* operat = cast(Operator*,ooop); 
+             switch(operat.operat)
+             {
+                case ')': 
+                {
+                   var Operator* kla = new Operator;
+                   kla.operat = ')'; 
+                   operatorStack.push(kla);
+                }; break;
+                case '(':
+                {
+                   var Operator* opTop;
+                   do 
+                   {
+                     this.rechneSpitze();
+                     if(operatorStack.length() > 0)
+                     {
+                       operatorStack.peek(opTop);
+                     }
+                     else{opTop = NULL;}
+                   }
+                   while((opTop != NULL) && (opTop.operat != ')'));
+                   var Operator* schnuller; 
+                   operatorStack.pop(schnuller);
+                };break;
+
+                default:
+                {
+                    if(operatorStack.length() == 0)
+                    {
+                       operatorStack.push(operat);
+                    }              
+                    else
+                    {
+                       var Operator* topOp;
+                       operatorStack.peek(topOp);
+                       if((topOp.operat != ')') && (this.isHigherPrio(topOp,operat)==1) )
+                       {
+                         this.rechneSpitze();
+                       }
+                       operatorStack.push(operat);
+                    }
+                };
+             }
+          }
+      }
+   }
+
+   while(operatorStack.length() > 0) 
+   {
+     this.rechneSpitze();
+   }
+
+
+   return -1;
+}
+
+void Ausrechner::rechneSpitze()
+{
+
+   var Operand* oL;
+   operandStack.pop(oL);
+   var Operand* oR;
+   operandStack.pop(oR);
+   var Operand* ergebnis = new Operand;
+   var Operator* topOp;
+   operatorStack.pop(topOp);
+   switch(topOp.operat)
+   {
+      case '+': {ergebnis.wert = oL.wert + oR.wert;};break; 
+      case '-': {ergebnis.wert = oL.wert - oR.wert;};break; 
+      case '*': {ergebnis.wert = oL.wert * oR.wert;};break; 
+      case '/': {ergebnis.wert = oL.wert / oR.wert;};break; 
+      default: {
+        this.fehler("Ausrechner::rechneSpitze() Fehler");
+      };
+   }
+   operandStack.push(ergebnis); 
+
+   pfc.fstr("ergebnis: $").sa(ergebnis.wert).pr();
+}
+
+
+int Ausrechner::isHigherPrio(Operator* oprL,Operator* oprR)
+{
+    switch(oprL.operat)
+    {
+       case '+':{ 
+                  if(oprR.operat == '+') {return 1; }
+                  return 0; 
+                }; break;
+       case '-':{ 
+                  if(oprR.operat == '+') {return 1; }
+                  return 0; 
+                }; break;
+       case '*':{ 
+                  if(oprR.operat == '/') {return 0; }
+                  return 1; 
+                }; break;
+       case '/':{ 
+                  return 1; 
+                }; break;
+       default: {
+          pfc.fstr("Fehler in Ausrechner::isHigherPrio").pr();
+          var SystemControl sc;
+          sc.exit();
+       };
+    }
+    return 0;//dummy
+}
+
+
+int OperandOderOperator::isOperand()
+{ 
+   return 0;
+}
+
+void OperandOderOperator::drucke(&String_16 ausgabe)
+{
+   ausgabe.assign("ungueltig");
+}
+
+int OperandOderOperator::isOperator()
+{
+   return 0;
+}
+
+int Operand::isOperand()
+{
+   return 1;
+}
+
+void Operand::drucke(&String_16 ausgabe)
+{
+   ausgabe.assign("O(");
+   ausgabe.append(wert);
+   ausgabe.append(")");
+}
+
+int Operator::isOperator()
+{
+   return 1;
+}
+
+void Operator::drucke(&String_16 ausgabe)
+{
+   ausgabe.assign(operat);
+}
+
+//alternativer Ausrechner
+int Ausrechner::Addition()
+{
+
+   var Token t;
+   var String_16* tokVal;
+   scanner.currentToken(t,tokVal);
+   var int links = this.Multiplication(); 
+   scanner.currentToken(t,tokVal);
+   var int summe = links;
+   //pfc.fstr("summe=$").sa(summe).pr();
+   while((t == T_PLUS) || (t==T_MINUS) )
+   {
+      var Token tAlt = t;
+      scanner.nextToken();
+      var int rechts = this.Multiplication();
+      scanner.currentToken(t,tokVal);
+      if( tAlt == T_PLUS )
+      {
+         //pfc.fstr("$+$").sa(summe).sa(rechts).pr();
+         summe = summe + rechts;
+      }
+      else { 
+         //pfc.fstr("$-$").sa(summe).sa(rechts).pr();
+        summe = summe - rechts; 
+      }
+   }
+   return summe;
+}
+
+
+int Ausrechner::Multiplication()
+{
+   //var PrintfClass pfc;
+   //pfc.fstr("Multiplication/Division").pr();
+
+   var Token t;
+   var String_16* tokVal;
+   var int links = this.Primary();
+   scanner.currentToken(t,tokVal);
+   var int prod = links;
+   while((t == T_MAL) || (t == T_DURCH) )
+   {
+      var Token tAlt = t;
+      scanner.nextToken();
+      var int rechts = this.Primary();
+      scanner.currentToken(t,tokVal);
+      if(tAlt == T_MAL)
+      { 
+        //pfc.fstr("$*$").sa(prod).sa(rechts).pr();
+        prod = prod * rechts; }
+      else
+      { 
+        //pfc.fstr("$/$").sa(prod).sa(rechts).pr();
+        prod = prod / rechts; 
+      }
+ 
+   } 
+   return prod;
+}
+
+int Ausrechner::Primary()
+{  
+   //pfc.fstr("Primary").pr();
+
+   var Token t;
+   var String_16* tokVal;
+   scanner.currentToken(t,tokVal);
+   switch(t)
+   {
+     case T_KLAMMER_AUF:{ 
+         //pfc.fstr(">(").pr();
+         scanner.nextToken();
+         var int ret = this.Addition(); 
+         scanner.currentToken(t,tokVal);
+         //pfc.fstr("t:$").sa(t).pr(); 
+         if(t == T_KLAMMER_ZU)
+         { 
+            scanner.nextToken();
+         } 
+         else
+         {
+            this.fehler(") erwartet");
+         }
+         return ret;
+     }; break;
+     case T_ZAHL:{ 
+        scanner.currentToken(t,tokVal);
+        var int ret = tokVal.asNumber();
+        scanner.nextToken(); 
+        return ret; 
+     }; break;
+     default: { 
+       var String_16 errm;
+       errm.append("unerwarteter Token ");
+       errm.append(tokVal);
+       errm.append("in Primary()");
+       this.fehler(errm);
+     }; 
+   }
+   return -11111;
+}
+
+void Ausrechner::fehler(char meldung[])
+{
+  var String_16 ms;
+  ms.append(meldung); 
+  this.fehler(ms);
+}
+
+void Ausrechner::fehler(&String_16 meldung)
+{
+   pfc.fstr("$").sa(meldung).pr();
+   var SystemControl sc;
+   sc.exit();
+}
