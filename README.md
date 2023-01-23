@@ -3,7 +3,7 @@
 
 by Dipl. Ing. Frank Gerlach (frankgerlach.tai@gmx.de)
 
-This project is a parser and calculator for Infix Expressions (e.g. 1+2*(3+4) == 15). Two approaches for computation are used:
+This project is a parser and calculator for Infix Expressions (e.g. 1+2*(3+4) == 15). Two approaches for computation are implemented:
 
 1.) Process the linear token list from the end, using a stack-based processor
 
