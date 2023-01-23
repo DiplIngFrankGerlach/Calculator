@@ -1,4 +1,5 @@
-//Aufruf-Syntax:sprprog.exe <DBDC-Datei> <Botschafts-NEGATIV-Liste.csv>
+// call with ./sprprog.exe <PathToEXPRESSIONFILE>
+
 
 int Main::main()
 { 
