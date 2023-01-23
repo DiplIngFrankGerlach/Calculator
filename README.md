@@ -1,5 +1,5 @@
 # Calculator
-A Calculator For Infix Expressions With Braces
+<h1>A Calculator For Infix Expressions With Braces</h1>
 
 by Dipl. Ing. Frank Gerlach
 
